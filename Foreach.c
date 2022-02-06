@@ -59,11 +59,11 @@ typedef struct array {
 #define NewArray(type,...) CreateArray(sizeof(*(type){0}),sizeof((type){0})/sizeof(*(type){0}), (BYTE*)(type){__VA_ARGS__},  (sizeof((int[]){__VA_ARGS__})/sizeof(int)))
 BYTE* FillElementsInArray(array* arr,BYTE* initValues, size_t numOfInits)
 {
+    if(numOfInits == 1 && initValues[0] == 0)
+        return arr->Arr;
 
-    size_t i,j;
-
-    for(i = 0;i<arr->Length && i < numOfInits;i++)
-        for(j =0;j< arr->ElementSize;j++)
+    for(size_t i = 0;i<arr->Length && i < numOfInits;i++)
+        for(size_t j =0;j< arr->ElementSize;j++)
             arr->Arr[i+j] = initValues[i+j];
 
     return arr->Arr;
