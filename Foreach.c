@@ -22,7 +22,7 @@ typedef struct array {
 }array;
 
 
-#define TYPEOF(x) _Generic((x), array*: ARR)
+#define TYPEOF(x) _Generic((x), struct array*: ARR)
 
 
 #define foreach_arr(TYPE,ITEM, ARRAY,BODY) \
@@ -65,15 +65,35 @@ int ChunkEmpty(BYTE* initValues,size_t ElementSize)
 
     return TRUE;
 }
+BYTE* FillArray(BYTE* dest,array* arr, size_t Elements,BYTE* src)
+{
+        for(size_t i = 0;i<arr->Length && i < Elements;i++)
+            for(size_t j =0;j< arr->ElementSize;j++)        
+                dest[arr->ElementSize*i+j] = src[arr->ElementSize*i+j];
+    return dest;
+}
+array* InsertIntoArr(array* array,size_t NumOfElements,BYTE* elements)
+{       
+    size_t sizeOfArr = array->Length*array->ElementSize;
+    BYTE* newArray = calloc(sizeOfArr+NumOfElements*array->ElementSize,sizeof(BYTE));
+    size_t origLength = array->Length;
+    array->Length += NumOfElements;
+    FillArray(newArray,array,origLength,array->Arr);
+    FillArray(newArray+(origLength-1),array,NumOfElements,elements);
+    free(array->Arr);
+    array->Arr = newArray;
+    array;
+
+}
+
+
 BYTE* FillElementsInArray(array* arr,BYTE* initValues, size_t numOfInits)
 {
 
     if(numOfInits == 1 && ChunkEmpty(initValues,arr->ElementSize))
         return arr->Arr;
-    for(size_t i = 0;i<arr->Length && i < numOfInits;i++)
-        for(size_t j =0;j< arr->ElementSize;j++)        
-            arr->Arr[arr->ElementSize*i+j] = initValues[arr->ElementSize*i+j];
-    return arr->Arr;
+
+    return FillArray(arr->Arr,arr,numOfInits,initValues);
 }
 array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t numOfInits)
 {
@@ -92,7 +112,7 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 int main(void)
 {
     // creates new array of specified type and size, with a list of elements to initialize afterwards
-    array* arr = NewArray(double[20],0.001);
+    array* arr = NewArray(double[20],0.0001);
     //foreach variable v of type in, in array, do this
     foreach(double,v,arr,
     {    
