@@ -57,15 +57,22 @@ typedef struct array {
 
 
 #define NewArray(type,...) CreateArray(sizeof(*(type){0}),sizeof((type){0})/sizeof(*(type){0}), (BYTE*)(type){__VA_ARGS__},  (sizeof((int[]){__VA_ARGS__})/sizeof(int)))
+int ChunkEmpty(BYTE* initValues,size_t ElementSize)
+{
+    for(size_t i =0;i<ElementSize;i++)
+        if(initValues[i] != 0)
+            return FALSE;
+
+    return TRUE;
+}
 BYTE* FillElementsInArray(array* arr,BYTE* initValues, size_t numOfInits)
 {
-    if(numOfInits == 1 && initValues[0] == 0)
+
+    if(numOfInits == 1 && ChunkEmpty(initValues,arr->ElementSize))
         return arr->Arr;
-
     for(size_t i = 0;i<arr->Length && i < numOfInits;i++)
-        for(size_t j =0;j< arr->ElementSize;j++)
-            arr->Arr[i+j] = initValues[i+j];
-
+        for(size_t j =0;j< arr->ElementSize;j++)        
+            arr->Arr[arr->ElementSize*i+j] = initValues[arr->ElementSize*i+j];
     return arr->Arr;
 }
 array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t numOfInits)
@@ -84,7 +91,7 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 
 int main(void)
 {
-    
+    // creates new array of specified type and size, with a list of elements to initialize afterwards
     array* arr = NewArray(double[20],0);
     //foreach variable v of type in, in array, do this
     foreach(double,v,arr,
