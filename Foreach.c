@@ -92,7 +92,7 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 int main(void)
 {
     // creates new array of specified type and size, with a list of elements to initialize afterwards
-    array* arr = NewArray(double[20],0);
+    array* arr = NewArray(double[20],0.001);
     //foreach variable v of type in, in array, do this
     foreach(double,v,arr,
     {    
