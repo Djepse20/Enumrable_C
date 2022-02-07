@@ -11,7 +11,8 @@ typedef enum LIST_TYPES{
 }LIST_TYPES;
 
 
-
+#define XSTR(x) STR(x)
+#define STR(x) #x
 
 
 typedef struct array {
@@ -21,22 +22,23 @@ typedef struct array {
     size_t ElementSize;
 }array;
 
-
+#define ISCHAR(x) _Generic((x), char*: NOTVALID, default:x)
 #define TYPEOF(x) _Generic((x), struct array*: ARR)
 
 
-#define foreach_arr(TYPE,ITEM, ARRAY,BODY) \
+#define foreach_arr(ITEM, ARRAY,BODY) \
     for(int count = 0, size = ARRAY->Length; count < size; count++)\
     {\
-        TYPE* ITEM = (TYPE*)&(*((ARRAY->Arr)+count*ARRAY->ElementSize)); \
+        ITEM = (void*)&(*((ARRAY->Arr)+count*ARRAY->ElementSize)); \
         do\
         BODY\
         while(0);\
     }
         
-#define foreach_list(TYPE,ITEM, LIST,BODY)\
-    for( ITEM = list->head; item != NULL; ITEM = ITEM->next)\
+#define foreach_list(ITEM, LIST,BODY)\
+    for( void* item = list->head;  && item != NULL; item = item->next)\
     {\
+        ITEM = item;\
         do\
         BODY\
         while(0);\
@@ -44,29 +46,33 @@ typedef struct array {
 
 
 
-#define foreach(TYPE,item, Enumerable, BODY) \
+#define foreach(item, Enumerable,BODY) \
     do\
     {\
         switch (TYPEOF(Enumerable))\
         {\
             case ARR:\
-            foreach_arr(TYPE,item, Enumerable, BODY);\
+            foreach_arr(item, Enumerable,BODY)\
+            \
             break;\
         }\
     }while(0)
 
-#define InsertIntoEnumerable(Enumerable,type,...)\
+#define InsertIntoEnumerable(Enumerable,TYPE,...)\
     do\
     {\
       switch (TYPEOF(Enumerable))\
       {\
             case ARR:\
-            InsertIntoArr(Enumerable,sizeof((type){0})/sizeof(*(type){0}),(BYTE*)(type){__VA_ARGS__}, (sizeof((int[]){__VA_ARGS__})/sizeof(int)));\
+            InsertIntoArr(Enumerable,sizeof((TYPE){0})/sizeof(*(TYPE){0}),(BYTE*)(TYPE){__VA_ARGS__}, (sizeof((BYTE[]){__VA_ARGS__})/sizeof(BYTE)));\
             break;\
       }  \
     } while (0)
-    
-#define NewArray(type,...) CreateArray(sizeof(*(type){0}),sizeof((type){0})/sizeof(*(type){0}), (BYTE*)(type){__VA_ARGS__},  (sizeof((int[]){__VA_ARGS__})/sizeof(int)))
+
+
+#define NewArray(TYPE,...) CreateArray(sizeof(*(TYPE){0}),sizeof(TYPE)/sizeof(*(TYPE){0}), (BYTE*)(TYPE){__VA_ARGS__},(sizeof((BYTE[]){__VA_ARGS__})/sizeof(BYTE)))
+
+
 int ChunkEmpty(BYTE* initValues,size_t ElementSize)
 {
     for(size_t i =0;i<ElementSize;i++)
@@ -75,14 +81,12 @@ int ChunkEmpty(BYTE* initValues,size_t ElementSize)
 
     return TRUE;
 }
-BYTE* FillArray(BYTE* dest,array* arr, size_t Elements,BYTE* src)
+void* FillArray(void* dest,array* arr, size_t Elements,void* src)
 {
-        for(size_t i = 0;i<arr->Length && i < Elements;i++)
-            for(size_t j =0;j< arr->ElementSize;j++)        
-                dest[arr->ElementSize*i+j] = src[arr->ElementSize*i+j];
+    memcpy(dest,src,Elements*arr->ElementSize);
     return dest;
 }
-void InsertIntoArr(array* array,size_t NumOfElements,BYTE* elements,size_t elementsToInit)
+void InsertIntoArr(array* array,size_t NumOfElements,void* elements,size_t elementsToInit)
 {       
 
     size_t sizeOfArr = array->Length*array->ElementSize;
@@ -101,9 +105,8 @@ void InsertIntoArr(array* array,size_t NumOfElements,BYTE* elements,size_t eleme
 }
 
 
-BYTE* FillElementsInArray(array* arr,BYTE* initValues, size_t numOfInits)
+void* FillElementsInArray(array* arr,void* initValues, size_t numOfInits)
 {
-
     if(numOfInits == 1 && ChunkEmpty(initValues,arr->ElementSize))
         return arr->Arr;
 
@@ -116,7 +119,6 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 
     arr->Length = length;
     arr->ElementSize = element_size;
-
     arr->Arr = FillElementsInArray(arr,initValues,numOfInits);
 
     return arr;
@@ -125,17 +127,18 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 
 int main(void)
 {
-    // creates new array of specified type and size, with a list of elements to initialize afterwards
-    array* arr = NewArray(double[20],2,3);
-    //foreach variable v of type in, in array, do this
-
-    InsertIntoEnumerable(arr,double[20],0,1);
-    printf("%d",arr->Length);
-
-    foreach(double,v,arr,
-    {    
-        printf(" %lf",*v);
-    });
+    // creates new array of specified TYPE and size, with a list of elements to initialize afterwards
+    //ALWAYS USE Type[numElem] and not a Type*.
+    //The latter will make an array of 8 bytes, the first numElem bytes.
+    //using Type* will therfore as a consequence break foreach :) 
+    // a fix that could (and proably should be implented would be the need to specify the type and size)
+    array* arr = NewArray(char[20],"mus seee");
+    //foreach variable v of TYPE T in array, do this
+    
+    
+    foreach(char* v,arr, 
+        printf("%c",*v);
+    );
     return 0;
 }
 
