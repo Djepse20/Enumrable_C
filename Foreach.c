@@ -55,7 +55,17 @@ typedef struct array {
         }\
     }while(0)
 
-
+#define InsertIntoEnumerable(Enumerable,type,...)\
+    do\
+    {\
+      switch (TYPEOF(Enumerable))\
+      {\
+            case ARR:\
+            InsertIntoArr(Enumerable,sizeof((type){0})/sizeof(*(type){0}),(BYTE*)(type){__VA_ARGS__}, (sizeof((int[]){__VA_ARGS__})/sizeof(int)));\
+            break;\
+      }  \
+    } while (0)
+    
 #define NewArray(type,...) CreateArray(sizeof(*(type){0}),sizeof((type){0})/sizeof(*(type){0}), (BYTE*)(type){__VA_ARGS__},  (sizeof((int[]){__VA_ARGS__})/sizeof(int)))
 int ChunkEmpty(BYTE* initValues,size_t ElementSize)
 {
@@ -72,17 +82,21 @@ BYTE* FillArray(BYTE* dest,array* arr, size_t Elements,BYTE* src)
                 dest[arr->ElementSize*i+j] = src[arr->ElementSize*i+j];
     return dest;
 }
-array* InsertIntoArr(array* array,size_t NumOfElements,BYTE* elements)
+void InsertIntoArr(array* array,size_t NumOfElements,BYTE* elements,size_t elementsToInit)
 {       
+
     size_t sizeOfArr = array->Length*array->ElementSize;
-    BYTE* newArray = calloc(sizeOfArr+NumOfElements*array->ElementSize,sizeof(BYTE));
+    BYTE* newArray = calloc(sizeOfArr+NumOfElements,array->ElementSize);
     size_t origLength = array->Length;
     array->Length += NumOfElements;
     FillArray(newArray,array,origLength,array->Arr);
-    FillArray(newArray+(origLength-1),array,NumOfElements,elements);
+
+    if(elementsToInit  > 1 || !ChunkEmpty(elements,array->ElementSize))  
+        FillArray(newArray+(array->ElementSize*(origLength-1)),array,elementsToInit,elements);
+
     free(array->Arr);
     array->Arr = newArray;
-    array;
+
 
 }
 
@@ -112,8 +126,12 @@ array* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t n
 int main(void)
 {
     // creates new array of specified type and size, with a list of elements to initialize afterwards
-    array* arr = NewArray(double[20],0.0001);
+    array* arr = NewArray(double[20],2,3);
     //foreach variable v of type in, in array, do this
+
+    InsertIntoEnumerable(arr,double[20],0,1);
+    printf("%d",arr->Length);
+
     foreach(double,v,arr,
     {    
         printf(" %lf",*v);
