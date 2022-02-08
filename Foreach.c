@@ -20,21 +20,32 @@ typedef Enumerable LinkedList;
 
 typedef struct _LinkedList _LinkedList;
 typedef struct array {
-    BYTE* data;
+    struct arrayimpl* impl;
 }array;
+struct arrayimpl {
+    BYTE* data;
+};
+
 
 struct _LinkedList {
     BYTE* data;
     _LinkedList* next;
 
 };
+struct LinkedListimpl 
+{
+
+    BYTE* curr;
+    _LinkedList* impl;
+};
+
 typedef struct Enumerable{
     union 
     {
-        array* Arr;
-        _LinkedList* List;
+        struct arrayimpl* Arr;
+        struct LinkedListimpl* List;
     };
-    BYTE* curr;
+
     List_TYPES Type;
     size_t Length;
     size_t ElementSize;
@@ -71,11 +82,11 @@ void* GetNextElement(Enumerable*Enumerable,size_t count)
 
         if(count == 0)
         {
-            Enumerable->curr = (BYTE*)Enumerable->List->next;
+            Enumerable->List->curr = (BYTE*)Enumerable->List->next;
             return (void*)&(*(Enumerable->List->data));
         }
-        data = ((_LinkedList*)(&(*Enumerable->curr)))->data;
-        Enumerable->curr = (BYTE*)((_LinkedList*)(&(*Enumerable->curr)))->next;
+        data = ((_LinkedList*)(&(*Enumerable->List->curr)))->data;
+        Enumerable->List->curr = (BYTE*)((_LinkedList*)(&(*Enumerable->List->curr)))->next;
         return (void*)&(*(data));
         break;
     }
