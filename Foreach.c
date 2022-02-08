@@ -148,27 +148,16 @@ void * SepcialMemcpy(void* dest, void* src,size_t n)
 void AddNewNode(Enumerable* list,void* data)
 {
     LinkedList* linkedList = (LinkedList*)list->curr;
-
     LinkedList* _newnode = malloc(sizeof(LinkedList));
-
     _newnode->data = malloc(list->ElementSize);
-
     //copy data into new node
-
     SepcialMemcpy(_newnode->data,data,list->ElementSize);
-
-
-
     _newnode->next = NULL;
     list->curr = (BYTE*)_newnode;
 
     if(list->List == NULL)
     {
-
-
-
         list->List = _newnode;
-
         return;
     }
     //set the next node of the previous curr to new node
@@ -202,7 +191,22 @@ Enumerable* CreateLinkedList (size_t element_size, size_t length,BYTE* initValue
     list->List = initLinkedList(list,initValues,numOfInits);
     return list;
 }
+#define indexof(ENUMERABLE,TYPE,VAR) indexof_arr(ENUMERABLE,(BYTE*)(TYPE[]){VAR})
+int indexof_arr(Enumerable* enumrable,BYTE* var)
+{
+    int counter =0;
 
+    if(enumrable->Type != ARR)
+        return -1;
+    foreach(BYTE* value,enumrable)
+    {
+        if(memcmp(value,var,enumrable->ElementSize) == 0)
+            return counter;
+                printf("%d",counter);
+        counter++;
+    }
+    return -1;
+}
 
 int main(void)
 {
@@ -211,19 +215,17 @@ int main(void)
     //The latter will make an   of 8 bytes, the first numElem bytes.
     //using Type* will therfore as a consequence break foreach :) 
     // a fix that could (and proably should be implented would be the need to specify the type and size)
-    Enumerable* arr = NewArray(char[20],"test1");
-
+    Enumerable* arr = NewArray(int[20],1,2,3,4,5);
     //creates a new linked list that can be enumerated over
     Enumerable* List = NewLinkedList(int[20],1,2,3,4,5);
-
+    printf("index of 2 is %d",indexof(arr,int,4));
     //foreach variable v of TYPE T in array, do this
     InsertIntoEnumerable(arr,char[20],"test2");
-    
-  
-    foreach(int* v, List)
-        printf("%d",*v);    
-    foreach(char* v,arr)
-        printf("%c",*v);
+
+    // foreach(int* v, List)
+    //     printf("%d",*v);    
+    // foreach(int* v,arr)
+    //     printf("%d",*v);
 
     return 0;
 }
