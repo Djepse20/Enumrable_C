@@ -20,10 +20,11 @@ typedef Enumerable LinkedList;
 
 typedef struct _LinkedList _LinkedList;
 typedef struct array {
-    struct arrayimpl* impl;
+        BYTE* data;
+    
 }array;
 struct arrayimpl {
-    BYTE* data;
+    array* impl;
 };
 
 
@@ -77,13 +78,13 @@ void* GetNextElement(Enumerable*Enumerable,size_t count)
     switch (Enumerable->Type)
     {
     case ARR:
-        return &Enumerable->Arr->data[count*Enumerable->ElementSize];
+        return &Enumerable->Arr->impl->data[count*Enumerable->ElementSize];
     case LIST:
 
         if(count == 0)
         {
-            Enumerable->List->curr = (BYTE*)Enumerable->List->next;
-            return (void*)&(*(Enumerable->List->data));
+            Enumerable->List->curr = (BYTE*)Enumerable->List->impl->next;
+            return (void*)&(*(Enumerable->List->impl->data));
         }
         data = ((_LinkedList*)(&(*Enumerable->List->curr)))->data;
         Enumerable->List->curr = (BYTE*)((_LinkedList*)(&(*Enumerable->List->curr)))->next;
@@ -128,14 +129,14 @@ void InsertIntoArr(Enumerable* array,size_t NumOfElements,void* elements,size_t 
     BYTE* newArray = calloc(sizeOfArr+NumOfElements,array->ElementSize);
     size_t origLength = array->Length;
     array->Length += NumOfElements;
-    FillArray(newArray,array,origLength,array->Arr->data);
+    FillArray(newArray,array,origLength,array->Arr->impl->data);
 
     if(elementsToInit  > 1 || !ChunkEmpty(elements,array->ElementSize))  
         FillArray(newArray+(array->ElementSize*(origLength-1)),array,elementsToInit,elements);
 
 
-    free(array->Arr->data);
-    array->Arr->data = newArray;
+    free(array->Arr->impl->data);
+    array->Arr->impl->data = newArray;
 }
 
 
@@ -143,20 +144,20 @@ void* FillElementsInArray(Enumerable* arr,void* initValues, size_t numOfInits)
 {
     if(numOfInits == 1 && ChunkEmpty(initValues,arr->ElementSize))
         return arr->Arr;
-    return FillArray(arr->Arr->data,arr,numOfInits,initValues);
+    return FillArray(arr->Arr->impl->data,arr,numOfInits,initValues);
 }
 Enumerable* CreateArray(size_t element_size, size_t length,BYTE* initValues, size_t numOfInits)
 {
     
     Enumerable* arr = malloc(sizeof(Enumerable));
     arr->Arr = malloc(sizeof(array));
-    arr->Arr->data = calloc(length,element_size);    
+    arr->Arr->impl->data = calloc(length,element_size);    
     arr->Type = ARR;
     arr->Length = length;
 
     arr->ElementSize = element_size;
     
-    arr->Arr->data = FillElementsInArray(arr,initValues,numOfInits);
+    arr->Arr->impl->data = FillElementsInArray(arr,initValues,numOfInits);
 
     return arr;
 }
@@ -169,13 +170,13 @@ void * SepcialMemcpy(void* dest, void* src,size_t n)
 }
 void AddNewNode(Enumerable* list,void* data)
 {
-    _LinkedList* linkedList = (_LinkedList*)list->curr;
+    _LinkedList* linkedList = (_LinkedList*)list->List->curr;
     _LinkedList* _newnode = malloc(sizeof(_LinkedList));
     _newnode->data = malloc(list->ElementSize);
     //copy data into new node
     SepcialMemcpy(_newnode->data,data,list->ElementSize);
     _newnode->next = NULL;
-    list->curr = (BYTE*)_newnode;
+    list->List->curr = (BYTE*)_newnode;
 
     if(list->List == NULL)
     {
@@ -207,7 +208,7 @@ Enumerable* CreateLinkedList (size_t element_size, size_t length,BYTE* initValue
     Enumerable* list = malloc(sizeof(Enumerable));
     list->Length = length;
     list->Type = LIST;
-    list->curr = NULL;
+    list->List->curr = NULL;
     list->List = NULL;
     list->ElementSize = element_size;
     list->List = initLinkedList(list,initValues,numOfInits);
@@ -237,7 +238,7 @@ BYTE* GetValueAtIndex_arr(Enumerable* enumrable,int index)
         return 0;
     if(index > enumrable->Length-1)
         return 0;
-    return &enumrable->Arr->data[index*enumrable->ElementSize];
+    return &enumrable->Arr->impl->data[index*enumrable->ElementSize];
 }
 
 int main(void)
