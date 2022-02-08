@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,38 +15,48 @@ typedef enum List_TYPES{
 #define XSTR(x) STR(x)
 #define STR(x) #x
 
-typedef struct LinkedList LinkedList;
+typedef Enumerable Array;
+typedef Enumerable LinkedList;
+
+typedef struct _LinkedList _LinkedList;
 typedef struct array {
     BYTE* data;
 }array;
 
-struct LinkedList {
+struct _LinkedList {
     BYTE* data;
-    LinkedList* next;
+    _LinkedList* next;
 
 };
 typedef struct Enumerable{
     union 
     {
         array* Arr;
-        LinkedList* List;
+        _LinkedList* List;
     };
     BYTE* curr;
     List_TYPES Type;
     size_t Length;
     size_t ElementSize;
+    size_t count;
+    int keep;
 }Enumerable;
 
 
 
-#define ISCHAR(x) _Generic((x), char*: NOTVALID, default:x)
 
 
 
 #define foreach(ITEM, ENUMERABLE) \
-    for(int count = 0, size = ENUMERABLE->Length, keep = TRUE; keep && count < size; count++, keep = !keep)\
-        for(ITEM = GetNextElement((ENUMERABLE),count); keep; keep = FALSE)
+    for(ENUMERABLE->count = 0, ENUMERABLE->keep = TRUE; ENUMERABLE->keep && ENUMERABLE->count < ENUMERABLE->Length;ENUMERABLE->count++, ENUMERABLE->keep = !ENUMERABLE->keep)\
+        for(ITEM = GetNextElement((ENUMERABLE),ENUMERABLE->count); ENUMERABLE->keep; ENUMERABLE->keep = FALSE)
          
+
+
+
+
+
+
 
 
 
@@ -55,16 +66,16 @@ void* GetNextElement(Enumerable*Enumerable,size_t count)
     switch (Enumerable->Type)
     {
     case ARR:
-        return (void*)&(*((Enumerable->Arr->data)+count*Enumerable->ElementSize));
+        return &Enumerable->Arr->data[count*Enumerable->ElementSize];
     case LIST:
-    //YES
+
         if(count == 0)
         {
             Enumerable->curr = (BYTE*)Enumerable->List->next;
             return (void*)&(*(Enumerable->List->data));
         }
-        data = ((LinkedList*)(&(*Enumerable->curr)))->data;
-        Enumerable->curr = (BYTE*)((LinkedList*)(&(*Enumerable->curr)))->next;
+        data = ((_LinkedList*)(&(*Enumerable->curr)))->data;
+        Enumerable->curr = (BYTE*)((_LinkedList*)(&(*Enumerable->curr)))->next;
         return (void*)&(*(data));
         break;
     }
@@ -147,8 +158,8 @@ void * SepcialMemcpy(void* dest, void* src,size_t n)
 }
 void AddNewNode(Enumerable* list,void* data)
 {
-    LinkedList* linkedList = (LinkedList*)list->curr;
-    LinkedList* _newnode = malloc(sizeof(LinkedList));
+    _LinkedList* linkedList = (_LinkedList*)list->curr;
+    _LinkedList* _newnode = malloc(sizeof(_LinkedList));
     _newnode->data = malloc(list->ElementSize);
     //copy data into new node
     SepcialMemcpy(_newnode->data,data,list->ElementSize);
@@ -167,7 +178,7 @@ void AddNewNode(Enumerable* list,void* data)
 }
 
 
-LinkedList* initLinkedList(Enumerable* list,BYTE* initValues, size_t numOfInits)
+_LinkedList* initLinkedList(Enumerable* list,BYTE* initValues, size_t numOfInits)
 {
     for(size_t i =0;i<list->Length;i++)
     {
@@ -192,20 +203,30 @@ Enumerable* CreateLinkedList (size_t element_size, size_t length,BYTE* initValue
     return list;
 }
 #define indexof(ENUMERABLE,TYPE,VAR) indexof_arr(ENUMERABLE,(BYTE*)(TYPE[]){VAR})
+inline int EnumerableCount(Enumerable* enumrable)
+{
+    return enumrable->count;
+}
 int indexof_arr(Enumerable* enumrable,BYTE* var)
 {
-    int counter =0;
 
-    if(enumrable->Type != ARR)
-        return -1;
+
     foreach(BYTE* value,enumrable)
     {
         if(memcmp(value,var,enumrable->ElementSize) == 0)
-            return counter;
-                printf("%d",counter);
-        counter++;
+            return EnumerableCount(enumrable);
     }
     return -1;
+}
+#define GetValueAtIndex(ENUMRABLE,TYPE,INDEX) *(TYPE*)GetValueAtIndex_arr(ENUMRABLE,INDEX)
+BYTE* GetValueAtIndex_arr(Enumerable* enumrable,int index)
+{
+    
+    if(enumrable->Type != ARR)
+        return 0;
+    if(index > enumrable->Length-1)
+        return 0;
+    return &enumrable->Arr->data[index*enumrable->ElementSize];
 }
 
 int main(void)
@@ -215,18 +236,18 @@ int main(void)
     //The latter will make an   of 8 bytes, the first numElem bytes.
     //using Type* will therfore as a consequence break foreach :) 
     // a fix that could (and proably should be implented would be the need to specify the type and size)
-    Enumerable* arr = NewArray(int[20],1,2,3,4,5);
+    Array* arr = NewArray(int[20],1,2,3,4,5);
     //creates a new linked list that can be enumerated over
-    Enumerable* List = NewLinkedList(int[20],1,2,3,4,5);
-    printf("index of 2 is %d",indexof(arr,int,4));
+    LinkedList* List = NewLinkedList(int[20],1,2,3,4,5);
+    printf("index of 2 is %d ",indexof(List,int,2));
     //foreach variable v of TYPE T in array, do this
-    InsertIntoEnumerable(arr,char[20],"test2");
-
-    // foreach(int* v, List)
-    //     printf("%d",*v);    
-    // foreach(int* v,arr)
-    //     printf("%d",*v);
-
+    //InsertIntoEnumerable(arr,char[20],"test2");
+        foreach(int* v, List)
+            printf("%d",*v);  
+        printf("\n");  
+        foreach(int* v,arr)
+           printf("%d",*v);
+        printf("\n");
     return 0;
 }
 
