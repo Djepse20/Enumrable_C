@@ -15,8 +15,6 @@ typedef enum List_TYPES{
 #define XSTR(x) STR(x)
 #define STR(x) #x
 
-typedef Enumerable Array;
-typedef Enumerable LinkedList;
 
 typedef struct _LinkedList _LinkedList;
 typedef struct array {
@@ -46,7 +44,6 @@ typedef struct Enumerable{
         struct arrayimpl* Arr;
         struct LinkedListimpl* List;
     };
-
     List_TYPES Type;
     size_t Length;
     size_t ElementSize;
@@ -178,9 +175,9 @@ void AddNewNode(Enumerable* list,void* data)
     _newnode->next = NULL;
     list->List->curr = (BYTE*)_newnode;
 
-    if(list->List == NULL)
+    if(list->List->impl == NULL)
     {
-        list->List = _newnode;
+        list->List->impl = _newnode;
         return;
     }
     //set the next node of the previous curr to new node
@@ -200,7 +197,7 @@ _LinkedList* initLinkedList(Enumerable* list,BYTE* initValues, size_t numOfInits
             AddNewNode(list,NULL);
     }
 
-    return list->List;
+    return list->List->impl;
 }
 
 Enumerable* CreateLinkedList (size_t element_size, size_t length,BYTE* initValues, size_t numOfInits)
@@ -211,7 +208,7 @@ Enumerable* CreateLinkedList (size_t element_size, size_t length,BYTE* initValue
     list->List->curr = NULL;
     list->List = NULL;
     list->ElementSize = element_size;
-    list->List = initLinkedList(list,initValues,numOfInits);
+    list->List->impl = initLinkedList(list,initValues,numOfInits);
     return list;
 }
 #define indexof(ENUMERABLE,TYPE,VAR) indexof_arr(ENUMERABLE,(BYTE*)(TYPE[]){VAR})
@@ -248,9 +245,9 @@ int main(void)
     //The latter will make an   of 8 bytes, the first numElem bytes.
     //using Type* will therfore as a consequence break foreach :) 
     // a fix that could (and proably should be implented would be the need to specify the type and size)
-    Array* arr = NewArray(int[20],1,2,3,4,5);
+    Enumerable * arr = NewArray(int[20],1,2,3,4,5);
     //creates a new linked list that can be enumerated over
-    LinkedList* List = NewLinkedList(int[20],1,2,3,4,5);
+    Enumerable* List = NewLinkedList(int[20],1,2,3,4,5);
     printf("index of 2 is %d ",indexof(List,int,2));
     //foreach variable v of TYPE T in array, do this
     //InsertIntoEnumerable(arr,char[20],"test2");
