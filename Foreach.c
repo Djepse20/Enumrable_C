@@ -11,10 +11,12 @@ typedef enum List_TYPES{
     LIST = 1
 }List_TYPES;
 
-
+typedef enum OPTION{
+    DELETE = 0,
+    ADD = 1
+}OPTION;
 #define XSTR(x) STR(x)
 #define STR(x) #x
-
 
 
 typedef struct Enumerable{
@@ -41,7 +43,11 @@ typedef struct List {
     struct List* Next;
 
 }List;
-
+typedef struct CollectionHolder
+{
+    List* list;
+    
+}CollectionHolder;
 typedef struct LinkedList 
 {
 
@@ -114,6 +120,7 @@ void* GetNextElement(void* Collection,size_t count, Enumerable* Enumerable)
 
 #define NewArray(TYPE,...) CreateArray(sizeof(*(TYPE){0}),sizeof(TYPE)/sizeof(*(TYPE){0}), (BYTE*)(TYPE){__VA_ARGS__},(sizeof((BYTE[]){__VA_ARGS__})/sizeof(BYTE)))
 
+
 #define NewLinkedList(TYPE,...) CreateLinkedList(sizeof(*(TYPE){0}),sizeof(TYPE)/sizeof(*(TYPE){0}), (BYTE*)(TYPE){__VA_ARGS__},(sizeof((BYTE[]){__VA_ARGS__})/sizeof(BYTE)))
 int ChunkEmpty(BYTE* initValues,size_t ElementSize)
 {
@@ -122,6 +129,50 @@ int ChunkEmpty(BYTE* initValues,size_t ElementSize)
             return FALSE;
 
     return TRUE;
+}
+
+void AddNewElement(CollectionHolder* holder, void* Collection)
+{
+    List* list = holder->list;
+    List* newNode = malloc(sizeof(List));
+    newNode->Data = Collection;
+    newNode->Next = NULL;
+    while(list != NULL)
+    {
+        list = list->Next;
+    }
+    list = newNode;
+
+}
+
+void DeleteElements(CollectionHolder* holder)
+{
+    List* list = holder->list;
+    List* tmp;
+    while(list != NULL)
+    {
+        tmp = list;
+        list = list->Next;  
+        free(tmp->Data);
+        free(tmp);
+    }
+}
+
+
+void ControlCollection(OPTION option,void* Collection)
+{
+    static CollectionHolder* holder;
+    if(holder == NULL)
+        holder = malloc(sizeof(CollectionHolder));
+    switch (option)
+    {
+        case ADD:
+          AddNewElement(holder,Collection);
+        case DELETE:
+          DeleteElements(holder);
+        break;
+
+    }
 }
 void* FillArray(void* dest,Array* arr, size_t Elements,void* src)
 {
